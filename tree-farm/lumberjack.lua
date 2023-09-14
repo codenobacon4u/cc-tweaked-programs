@@ -1,19 +1,21 @@
-local treeTags = { ["minecraft:logs"] = true }
-local saplingTags = { ["minecraft:samplings"] = true }
+local treeTags = "minecraft:logs"
+local saplingTags = "minecraft:saplings"
 local fuelLimitMin = 2
 local fuelLimitMax = 16
-local fuelSlot = 0
-local logSlot = 1
-local saplingSlot = 2
-local bonemealSlot = 2
+local fuelSlot = 1
+local logSlot = 2
+local saplingSlot = 3
+local bonemealSlot = 4
 
-function blockEquals(tags)
+function blockEquals(dir, tag)
     local isBlock, data = turtle.inspect()
-    if isBlock then
-        for t in tags do
-            if (data.tags[t] ~= nil) then
-                return true
-            end
+    if dir == "up" then
+        isBlock, data = turtle.inspectUp()
+    end
+    if isBlock then 
+        --print(data.tags[tag])
+        if (data.tags[tag] ~= nil) then
+            return true
         end
     end
     return false
@@ -21,7 +23,7 @@ end
 
 -- Call this when facing the tree direction
 function waitForLog()
-    while (!blockEquals(treeTags)) do
+    while (blockEquals("", treeTags) == false ) do
         --maybe apply bonemeal if possible?
         turtle.select(bonemealSlot)
         if (turtle.getItemCount(bonemealSlot) ~= 0) then
@@ -34,6 +36,7 @@ function waitForLog()
         end
         sleep(1)
     end
+    print("Wait over")
 end
 
 function refuel()
@@ -54,7 +57,7 @@ function minePass()
     turtle.dig()
     turtle.forward()
     turtle.suck()
-    while (turtle.detectUp() and blockEquals(treeTags)) do
+    while (turtle.detectUp() and blockEquals("up", treeTags) == true) do
         turtle.digUp()
         turtle.suckUp()
         turtle.up()
@@ -64,23 +67,30 @@ function minePass()
         turtle.down()
         y = y - 1
     end
+    sleep(2)
+    turtle.suck()
     turtle.back()
     turtle.turnRight()
     turtle.turnRight()
     turtle.select(logSlot)
     turtle.drop()
-    turtle.select(saplingSlot)
-    turtle.dropUp()
     turtle.turnRight()
+    turtle.select(saplingSlot)
+    turtle.drop()
     turtle.turnRight()
 end
 
 -- main loop
 while true do
     refuel()
-    if (!blockEquals(saplingTags)) then
+    if (blockEquals("", saplingTags) == false) then
         print("Planting Sapling!")
         turtle.select(saplingSlot)
+        if (turtle.getItemCount() == 0) then
+            turtle.turnLeft()
+            turtle.suck()
+            turtle.turnRight()
+        end
         turtle.place()
     end
     print("Waiting for tree to grow")
@@ -88,4 +98,4 @@ while true do
     print("Tree grown, farming...")
     minePass()
     print("Farming complete!")
-end
+  end
